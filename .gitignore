@@ -1,0 +1,33 @@
+# =============== #
+# Unity generated #
+# =============== #
+cs113Project/Temp/
+cs113Project/Obj/
+cs113Project/UnityGenerated/
+cs113Project/Library/
+
+# ===================================== #
+# Visual Studio / MonoDevelop generated #
+# ===================================== #
+cs113Project/ExportedObj/
+*.svd
+*.userprefs
+*.csproj
+*.pidb
+*.suo
+*.sln
+*.user
+*.unityproj
+*.booproj
+
+# ============ #
+# OS generated #
+# ============ #
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Icon?
+ehthumbs.db
+Thumbs.db
