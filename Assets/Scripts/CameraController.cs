@@ -5,7 +5,7 @@ public class CameraController : MonoBehaviour {
 
 	private Transform player;
 
-	public float smooth = 2.5f;         // The relative speed at which the camera will catch up.
+	public float smooth = 1.5f;         // The relative speed at which the camera will catch up.
 
 	private Vector3 offset;             // The relative position of the camera from the player.
 	private Vector3 newPos;
