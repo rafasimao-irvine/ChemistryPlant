@@ -8,6 +8,11 @@ public class PlayerController : MonoBehaviour {
 
 	private Dictionary<string, int> pickedUpMolecules;
 
+	public int element;
+	private string[] possibleElements;
+
+	public GUIText pressText;
+
 	private float minNeededDistance = 3.0f;
 
 	// On gui:
@@ -15,10 +20,15 @@ public class PlayerController : MonoBehaviour {
 
 	void Start()
 	{
+		element = -1;
+		possibleElements = new string[]{"Water", "Carbon Dioxide", "Glucose", "Urea", "Potassium Sulfate", "Oxygen", "Ammonia"};
+
 		isEncyclopediaOn = false;
 
 		pickedUpMolecules = new Dictionary<string, int>();
 		initPickedUpMoleculesValues();
+
+		pressText.text = "";
 	}
 
 	void initPickedUpMoleculesValues()
@@ -29,11 +39,12 @@ public class PlayerController : MonoBehaviour {
 		pickedUpMolecules.Add("N",0);
 		pickedUpMolecules.Add("K",0);
 		pickedUpMolecules.Add("S",0);
-		pickedUpMolecules.Add("Mg",0);
 	}
-
+	
 	void Update () 
 	{
+		pressText.text = "";
+
 		if (Input.GetKeyUp(KeyCode.H)) {
 			isEncyclopediaOn = !isEncyclopediaOn;
 		}
@@ -79,11 +90,19 @@ public class PlayerController : MonoBehaviour {
 
 	// Public methods: =========================================
 
+	public string[] getPossibleElements()
+	{
+		return possibleElements;
+	}
+
+
 	public bool isPlayerNear(Vector3 otherPosition) 
 	{
 		float dist = Vector3.Distance(otherPosition, transform.position);
-		if (dist < minNeededDistance)
+		if (dist < minNeededDistance) {
+			pressText.text = "Press E to interact";
 			return true;
+		}
 
 		return false;
 	}
@@ -140,17 +159,27 @@ public class PlayerController : MonoBehaviour {
 
 	void showInventory()
 	{
-		float inventoryX = 360.0f;
+		float inventoryX = 400.0f;
 		float inventoryY = 520.0f;
 
 		foreach(KeyValuePair<string, int> element in pickedUpMolecules)
 		{
-			showInventoryElement(inventoryX, inventoryY, element.Key, element.Value);
+			showInventoryMolecules(inventoryX, inventoryY, element.Key, element.Value);
 			inventoryX += 80.0f;
 		}
+
+		showInventoryElement();
 	}
 
-	void showInventoryElement(float x, float y, string name, int number)
+	void showInventoryElement()
+	{
+		if(element == -1)
+			GUI.Box(new Rect(40,460,120,120),"");
+		else
+			GUI.Box(new Rect(40,460,120,120),possibleElements[element]);
+	}
+
+	void showInventoryMolecules(float x, float y, string name, int number)
 	{
 		GUI.Box(new Rect(x,y,70,70),name);
 		GUI.Box(new Rect(x+40,y+40,30,30), number.ToString());
@@ -158,7 +187,7 @@ public class PlayerController : MonoBehaviour {
 
 	void showEncyclopedia()
 	{
-		Rect windowRect = GUI.Window (0, new Rect(Screen.width/6.0f,Screen.height/13.0f,900,520), 
+		Rect windowRect = GUI.Window (0, new Rect(Screen.width/6.0f,Screen.height/20.0f,900,470), 
 		                              null, "Encyclopaedia");
 		float elementsX = windowRect.x+40.0f;
 
@@ -177,24 +206,18 @@ public class PlayerController : MonoBehaviour {
 		                        "It is an important carbohydrate, used as a secondary source of energy.\n" +
 		                        "A main product of photosynthesis.");
 		showEncyclopediaElement(elementsX, windowRect.y+210,
-		                        "C55H72O5N4Mg","Chlorophyll A",
-		                        "A chlorin pigment.\n" +
-		                        "Commonly found in the chloroplasts of algae and plants.\n" +
-		                        "Critical in photosynthesis, which allows plants to absorb light and convert it into energy.\n" +
-		                        "Green in color.");
-		showEncyclopediaElement(elementsX, windowRect.y+270,
 		                        "CON2H4","Urea",
 		                        "Also known as carbamide.\n" +
 		                        "Widely used in fertilizers as a common/convenient source of nitrogen.");
-		showEncyclopediaElement(elementsX, windowRect.y+330,
+		showEncyclopediaElement(elementsX, windowRect.y+270,
 		                        "K2SO4","Potassium sulfate",
 		                        "Also known as arcanite.\n" +
 		                        "A white crystalline salt, commonly used in fertilizers to provide potassium and sulfur.");
-		showEncyclopediaElement(elementsX, windowRect.y+390,
+		showEncyclopediaElement(elementsX, windowRect.y+330,
 		                        "O2","Oxygen",
 		                        "Naturally found as a gas.\n" +
 		                        "Released by plants during photosynthesis and used by organisms during respiration.");
-		showEncyclopediaElement(elementsX, windowRect.y+450,
+		showEncyclopediaElement(elementsX, windowRect.y+390,
 		                        "NH3","Ammonia",
 		                        "Also known as azane.\n" +
 		                        "A colorless gas with a pungent smell. A mid-strength base, can be used to neutralize acids.");
