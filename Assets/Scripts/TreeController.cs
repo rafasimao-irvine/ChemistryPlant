@@ -4,13 +4,14 @@ using System.Collections;
 public class TreeController : MonoBehaviour {
 
 	private PlayerController playerController;
+	private GUIController guiController;
 
-	public GUIText countText;
-	public GUIText winText;
+	public GameObject growEffect;
 
 	public GameObject oxygen;
 	public GameObject[] oxygens;
-	private const int MAX_OXYGENS = 3;
+	private int maxOxygens = 1;
+	private const int MAX_OXYGENS = 5;
 	private const float SPAWN_DELAY = 15.0f;
 	private float spawnTime = 0.0f;
 
@@ -21,22 +22,17 @@ public class TreeController : MonoBehaviour {
 
 	private string errorMessage = "The tree needs ";
 	private string growMessage = "Congratulations! You just grown your three!!";
-	private bool isShowingMessage;
-	private string showingMessage;
 
 	// Use this for initialization
 	void Start () {
 		playerController = (PlayerController) GameObject.FindGameObjectWithTag("Player").
 			GetComponent(typeof(PlayerController));
+		guiController = GameObject.Find("GUI").GetComponentInChildren<GUIController>();
 
 		oxygens = new GameObject[MAX_OXYGENS];
 
 		neededElement = 0;
 
-		countText.text = "Tree phase: "+treePhase.ToString();
-		winText.text = "";
-
-		isShowingMessage = false;
 	}
 	
 	// Update is called once per frame
@@ -45,10 +41,10 @@ public class TreeController : MonoBehaviour {
 		if(spawnTime > SPAWN_DELAY){
 			spawnTime = 0.0f;
 			bool spawn = false;
-			for(int i=0;(i<MAX_OXYGENS)&&(!spawn);i++){
+			for(int i=0;(i<maxOxygens)&&(!spawn);i++){
 				if(oxygens[i]==null){
 					Vector3 pos = new Vector3(transform.position.x+Random.Range(1,5),
-				    	    	              transform.position.y,
+					                          transform.position.y+0.5084908f,
 				        	                  transform.position.z+Random.Range(1,5));
 					oxygens[i] = (GameObject)Instantiate(oxygen, pos, transform.rotation);
 					((Molecule)oxygens[i].GetComponent(typeof(Molecule))).type="O";
@@ -63,21 +59,19 @@ public class TreeController : MonoBehaviour {
 		// Verify player interaction
 		if (playerController.isPlayerNear(transform.position)) {
 			if (Input.GetKeyUp(KeyCode.E)) {
-				if(!isShowingMessage){
+				if(!guiController.isShowMessage()){
 					if (playerCanFeedMe())
 					{
 						playerController.element = -1;
 						grow();
 
-						showingMessage = growMessage;
+						guiController.showMessage(growMessage);
 					}else{
-						showingMessage = errorMessage+playerController.getPossibleElements()[neededElement];
+						guiController.showMessage(errorMessage+playerController.
+						                          getPossibleElements()[neededElement]);
 					}
 				}
-				isShowingMessage = !isShowingMessage;
 			}
-		}else{
-			isShowingMessage = false;
 		}
 	}
 
@@ -88,6 +82,8 @@ public class TreeController : MonoBehaviour {
 				neededElement=2;
 			else
 				neededElement++;
+
+			maxOxygens++;
 			return true;
 		}
 		return false;
@@ -95,23 +91,16 @@ public class TreeController : MonoBehaviour {
 
 	void grow(){
 		treePhase++;
-		transform.localScale = new Vector3(transform.localScale.x,transform.localScale.y+3,transform.localScale.z);
-		setTreePhaseText();
+		transform.localScale = new Vector3(transform.localScale.x+0.2f,
+		                                   transform.localScale.y+0.2f,
+		                                   transform.localScale.z+0.2f);
+		guiController.setTreePhaseText(treePhase, treeWinPhase);
+
+		Instantiate(growEffect, transform.position, transform.rotation);
 	}
 
-	void setTreePhaseText() 
-	{
-		countText.text = "Tree phase: "+treePhase.ToString();
-		if (treePhase > treeWinPhase)
-			winText.text = "YOU WIN!!!!!!!";
-	}
-
-
-	void OnGUI()
-	{
-		if(isShowingMessage) {
-			GUI.Box(new Rect(500,160,280,30),showingMessage);
-		}
+	public int getTreePhase(){
+		return treePhase;
 	}
 
 }

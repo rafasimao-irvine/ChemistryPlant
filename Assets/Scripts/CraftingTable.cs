@@ -4,9 +4,12 @@ using System.Collections.Generic;
 
 public class CraftingTable : MonoBehaviour {
 
+	public GameObject smokeEffect;
+
 	private bool isCraftingTableOn = false;
 
 	private PlayerController playerController;
+	private GUIController guiController;
 
 	private int selectionGridInt;
 	private string[] selectionStrings;
@@ -15,6 +18,7 @@ public class CraftingTable : MonoBehaviour {
 	void Start () {
 		playerController = (PlayerController) GameObject.FindGameObjectWithTag("Player").
 			GetComponent(typeof(PlayerController));
+		guiController = GameObject.Find("GUI").GetComponentInChildren<GUIController>();
 
 		selectionGridInt = 0;
 		selectionStrings = new string[]{"H2O", "CO2", "C6O12H6", "CON2H4", "K2SO4", "O2", "NH3"};
@@ -29,6 +33,7 @@ public class CraftingTable : MonoBehaviour {
 		}else{
 			isCraftingTableOn = false;
 		}
+		guiController.lockMessages = isCraftingTableOn;
 	}
 
 	void OnGUI() {
@@ -40,13 +45,23 @@ public class CraftingTable : MonoBehaviour {
 				Dictionary<string, int> molecules = getMoleculesWithStr(
 					selectionStrings[selectionGridInt].ToCharArray());
 				if (playerController.hasMolecules(molecules)) {
-					playerController.usePlayerMolecules(molecules);
-					playerController.element = selectionGridInt;
+					createNewElement(molecules);
 				}
 			}
 
 			//GUI.Window (0, windowRect, null, "Crafiting Table");
 		}
+	}
+
+	void createNewElement(Dictionary<string, int> molecules){
+		playerController.usePlayerMolecules(molecules);
+		playerController.element = selectionGridInt;
+
+		//Instantiate the smoke effect
+		Vector3 pos = new Vector3(transform.position.x+0.7f,
+		                          transform.position.y+3.9f,
+		                          transform.position.z-0.8f);
+		Instantiate(smokeEffect, pos, transform.rotation);
 	}
 	
 	Dictionary<string, int> getMoleculesWithStr(char[] components)

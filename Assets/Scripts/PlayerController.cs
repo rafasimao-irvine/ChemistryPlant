@@ -5,30 +5,33 @@ using System.Collections.Generic;
 public class PlayerController : MonoBehaviour {
 
 	public float speed;
+	public float turnSmoothing = 15f;   // A smoothing value for turning the player.
+	//public float speedDampTime = 0.1f;  // The damping for the speed parameter
 
-	private Dictionary<string, int> pickedUpMolecules;
+	private Animation anim;
+	private bool moving= false;
+
+	public Dictionary<string, int> pickedUpMolecules;
 
 	public int element;
-	private string[] possibleElements;
-
-	public GUIText pressText;
+	public string[] possibleElements;
 
 	private float minNeededDistance = 3.0f;
 
-	// On gui:
-	private bool isEncyclopediaOn;
+	private GUIController guiController;
 
 	void Start()
 	{
+		anim = GetComponent<Animation>();
+		anim["loop_run_funny"].speed=4.0f;
+
 		element = -1;
 		possibleElements = new string[]{"Water", "Carbon Dioxide", "Glucose", "Urea", "Potassium Sulfate", "Oxygen", "Ammonia"};
-
-		isEncyclopediaOn = false;
 
 		pickedUpMolecules = new Dictionary<string, int>();
 		initPickedUpMoleculesValues();
 
-		pressText.text = "";
+		guiController = GameObject.Find("GUI").GetComponentInChildren<GUIController>();
 	}
 
 	void initPickedUpMoleculesValues()
@@ -43,46 +46,67 @@ public class PlayerController : MonoBehaviour {
 	
 	void Update () 
 	{
-		pressText.text = "";
-
-		if (Input.GetKeyUp(KeyCode.H)) {
-			isEncyclopediaOn = !isEncyclopediaOn;
+		if(Input.GetKeyUp(KeyCode.E)){
+			anim.CrossFade("punch_hi_right");
 		}
 	}
 
-	void FixedUpdate () 
+
+	void FixedUpdate ()
 	{
-		float moveHorizontal = Input.GetAxis("Horizontal");
-		float moveVertical = Input   .GetAxis("Vertical");
+		// Cache the inputs.
+		float h = Input.GetAxis("Horizontal");
+		float v = Input.GetAxis("Vertical");
 
-		Vector3 movement = new Vector3 (moveHorizontal, 0.0f, moveVertical);
-		rigidbody.velocity = movement * speed * Time.deltaTime;		
-		//rigidbody.AddForce(movement * speed * Time.deltaTime);
-
+		MovementManagement(h, v);
 	}
 	
-	/*
-	void Update() 
+	void MovementManagement (float horizontal, float vertical)
 	{
-		if(Input.GetKeyUp(KeyCode.Space)) {
-			if(pickedUpObj != null) {
-				pickedUpObj.SetActive(true);
-				pickedUpObj.transform.position = transform.position;
-				pickedUpObj.transform.position += pickedUpObj.transform.forward*1.5f;
-				pickedUpObj = null;
+		// If there is some axis input...
+		if(horizontal != 0f || vertical != 0f)
+		{
+			// ... set the players rotation and set the speed parameter to 5.5f.
+			Rotating(horizontal, vertical);
+			Vector3 movement = new Vector3(horizontal,0.0f,vertical);
+			transform.position += movement*speed*Time.deltaTime;
+			if(!moving){
+				anim.CrossFade("loop_run_funny");
+				moving = true;
+			}
+		}else{
+			if(moving){
+				anim.CrossFade("loop_idle");
+				moving = false;
 			}
 		}
-	}*/
+	}
 
+	void Rotating (float horizontal, float vertical)
+	{
+		// Create a new vector of the horizontal and vertical inputs.
+		Vector3 targetDirection = new Vector3(horizontal, 0f, vertical);
+		
+		// Create a rotation based on this new vector assuming that up is the global y axis.
+		Quaternion targetRotation = Quaternion.LookRotation(targetDirection, Vector3.up);
+		
+		// Create a rotation that is an increment closer to the target rotation from the player's rotation.
+		Quaternion newRotation = Quaternion.Lerp(rigidbody.rotation, targetRotation, turnSmoothing * Time.deltaTime);
+		
+		// Change the players rotation to this new rotation.
+		rigidbody.MoveRotation(newRotation);
+	}
+
+	
 	void OnTriggerEnter(Collider collider)
 	{
 		if (collider.tag == "PickUp") {
 			string moleculeType = ((Molecule) collider.gameObject.GetComponent(typeof(Molecule))).type;
-
+			
 			if (pickedUpMolecules.ContainsKey(moleculeType)) {
 				pickedUpMolecules[moleculeType]++;
 			}
-
+			
 			Destroy(collider.gameObject);
 		}
 	}
@@ -100,7 +124,7 @@ public class PlayerController : MonoBehaviour {
 	{
 		float dist = Vector3.Distance(otherPosition, transform.position);
 		if (dist < minNeededDistance) {
-			pressText.text = "Press E to interact";
+			guiController.isPlayerNearObj = true;
 			return true;
 		}
 
@@ -145,89 +169,5 @@ public class PlayerController : MonoBehaviour {
 			}
 		}
 	}
-
-	// GUI ----------------------------------------------------------------------------
-
-	void OnGUI() 
-	{
-		showInventory();
-
-		if (isEncyclopediaOn) {
-			showEncyclopedia();
-		}
-	}
-
-	void showInventory()
-	{
-		float inventoryX = 400.0f;
-		float inventoryY = 520.0f;
-
-		foreach(KeyValuePair<string, int> element in pickedUpMolecules)
-		{
-			showInventoryMolecules(inventoryX, inventoryY, element.Key, element.Value);
-			inventoryX += 80.0f;
-		}
-
-		showInventoryElement();
-	}
-
-	void showInventoryElement()
-	{
-		if(element == -1)
-			GUI.Box(new Rect(40,460,120,120),"");
-		else
-			GUI.Box(new Rect(40,460,120,120),possibleElements[element]);
-	}
-
-	void showInventoryMolecules(float x, float y, string name, int number)
-	{
-		GUI.Box(new Rect(x,y,70,70),name);
-		GUI.Box(new Rect(x+40,y+40,30,30), number.ToString());
-	}
-
-	void showEncyclopedia()
-	{
-		Rect windowRect = GUI.Window (0, new Rect(Screen.width/6.0f,Screen.height/20.0f,900,470), 
-		                              null, "Encyclopaedia");
-		float elementsX = windowRect.x+40.0f;
-
-		showEncyclopediaElement(elementsX, windowRect.y+30,
-		                        "H2O","Water",
-		                        "Naturally found as a liquid.\n" +
-		                        "Also vital for all known life-forms and is the most widely used solvent.");
-		showEncyclopediaElement(elementsX, windowRect.y+90,
-		                        "CO2","Carbon Dioxide",
-		                        "Naturally found as a gas.\n " +
-		                        "Commonly released during the process of respiration by all known life-forms.\n" +
-		                        "Also used by plants for photosynthesis as their main way of getting energy.");
-		showEncyclopediaElement(elementsX, windowRect.y+150,
-		                        "C6O12H6","Glucose",
-		                        "Also known as D-glucose, dextrose and grape sugar.\n" +
-		                        "It is an important carbohydrate, used as a secondary source of energy.\n" +
-		                        "A main product of photosynthesis.");
-		showEncyclopediaElement(elementsX, windowRect.y+210,
-		                        "CON2H4","Urea",
-		                        "Also known as carbamide.\n" +
-		                        "Widely used in fertilizers as a common/convenient source of nitrogen.");
-		showEncyclopediaElement(elementsX, windowRect.y+270,
-		                        "K2SO4","Potassium sulfate",
-		                        "Also known as arcanite.\n" +
-		                        "A white crystalline salt, commonly used in fertilizers to provide potassium and sulfur.");
-		showEncyclopediaElement(elementsX, windowRect.y+330,
-		                        "O2","Oxygen",
-		                        "Naturally found as a gas.\n" +
-		                        "Released by plants during photosynthesis and used by organisms during respiration.");
-		showEncyclopediaElement(elementsX, windowRect.y+390,
-		                        "NH3","Ammonia",
-		                        "Also known as azane.\n" +
-		                        "A colorless gas with a pungent smell. A mid-strength base, can be used to neutralize acids.");
-	}
-
-	void showEncyclopediaElement(float x, float y, string element, string name, string description)
-	{
-		GUI.Box(new Rect(x,y,110,55),element);
-		GUI.Box(new Rect(x+120,y,115,55),name);
-		GUI.Box(new Rect(x+245,y,580,55),description);
-	}
-
+	
 }
