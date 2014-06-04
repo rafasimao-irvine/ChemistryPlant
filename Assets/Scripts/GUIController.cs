@@ -46,8 +46,10 @@ public class GUIController : MonoBehaviour {
 			isEncyclopediaOn = !isEncyclopediaOn;
 		}else if(Input.GetKeyUp(KeyCode.E)){
 			if(isShowingMessage){
-				isShowingMessage = false;
-				stopShowingTime = stopShowingDelay;
+				if(stopShowingTime<1){
+					isShowingMessage = false;
+					stopShowingTime = stopShowingDelay;
+				}
 			}
 		}
 
@@ -72,6 +74,7 @@ public class GUIController : MonoBehaviour {
 	{
 		isShowingMessage = true;
 		showingMessage = message;
+		stopShowingTime = stopShowingDelay;
 	}
 
 	public bool isShowMessage()

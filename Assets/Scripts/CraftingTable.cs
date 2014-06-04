@@ -7,6 +7,10 @@ public class CraftingTable : MonoBehaviour {
 	public GameObject smokeEffect;
 
 	private bool isCraftingTableOn = false;
+	private bool isOverridingElement = false;
+	private string overridingMessage = "You are carrying an element!\n" +
+		"Are you sure you want to craft a new element?\n" +
+		"This will make you lose the element you have!!";
 
 	private PlayerController playerController;
 	private GUIController guiController;
@@ -32,27 +36,51 @@ public class CraftingTable : MonoBehaviour {
 			}
 		}else{
 			isCraftingTableOn = false;
+			isOverridingElement = false;
 		}
 		guiController.lockMessages = isCraftingTableOn;
 	}
 
 	void OnGUI() {
-		if(isCraftingTableOn) {
+
+		if(isOverridingElement) {
+			float x = Screen.width/2.0f;
+			float y = Screen.height/2.0f;
+			GUI.Box(new Rect(x-180,y-80,360,70),overridingMessage);
+			if (GUI.Button (new Rect (x-60,y, 50, 50), "Craft")) {
+				Dictionary<string, int> molecules = getMoleculesWithStr(
+					selectionStrings[selectionGridInt].ToCharArray());
+				createNewElement(molecules);
+				
+				isOverridingElement =false;
+				isCraftingTableOn = false;
+			}
+			if (GUI.Button (new Rect (x+10, y, 50, 50), "Cancel")) {
+				isOverridingElement =false;
+				isCraftingTableOn = false;
+			}
+
+		}else if(isCraftingTableOn) {
 			Rect windowRect = new Rect(Screen.width/5.0f,Screen.height/8.0f,650,400);
 			selectionGridInt = GUI.SelectionGrid (new Rect (windowRect.x+200, windowRect.y+80, 250, 200), 
 			                                      selectionGridInt, selectionStrings, 2);
+			// Craft Button
 			if (GUI.Button (new Rect (windowRect.x+480, windowRect.y+120, 80, 80), "Craft")) {
 				Dictionary<string, int> molecules = getMoleculesWithStr(
 					selectionStrings[selectionGridInt].ToCharArray());
 				if (playerController.hasMolecules(molecules)) {
-					createNewElement(molecules);
+					if (playerController.element == -1)
+						createNewElement(molecules);
+					else{
+						isOverridingElement = true;
+					}
 				}
 			}
 
 			//GUI.Window (0, windowRect, null, "Crafiting Table");
 		}
 	}
-
+	
 	void createNewElement(Dictionary<string, int> molecules){
 		playerController.usePlayerMolecules(molecules);
 		playerController.element = selectionGridInt;

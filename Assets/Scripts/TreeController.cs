@@ -15,7 +15,7 @@ public class TreeController : MonoBehaviour {
 	private const float SPAWN_DELAY = 15.0f;
 	private float spawnTime = 0.0f;
 
-	private int treeWinPhase = 3;
+	private int treeWinPhase = 4;
 	private int treePhase = 1;
 
 	private int neededElement;
